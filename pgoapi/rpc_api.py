@@ -34,6 +34,7 @@ import logging
 import requests
 import subprocess
 import six
+import binascii
 import ctypes
 
 from google.protobuf import message
@@ -123,6 +124,7 @@ class RpcApi:
         self.log.debug('Execution of RPC')
 
         request_proto_serialized = request_proto_plain.SerializeToString()
+        #print binascii.hexlify(request_proto_serialized)
         try:
             http_response = self._session.post(endpoint, data=request_proto_serialized, timeout=30)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
@@ -276,7 +278,7 @@ class RpcApi:
             sen.gravity_z = random.triangular(-1, .7, -0.8)
             sen.status = 3
 
-            sig.field25 = 10038237239822475814
+            sig.field25 = ctypes.c_uint64(-8408506833887075802).value
 
             if self.device_info:
                 for key in self.device_info:
@@ -306,7 +308,9 @@ class RpcApi:
         rounded_size = len(signature_plain) + (256 - (len(signature_plain) % 256));
         total_size = rounded_size + 5;
         output = ctypes.POINTER(ctypes.c_ubyte * total_size)()
+        #print binascii.hexlify(signature_plain)
         output_size = self._signature_lib.encrypt(signature_plain, len(signature_plain), iv, ctypes.byref(output))
+        #print binascii.hexlify(output.contents)
         signature = b''.join(list(map(lambda x: six.int2byte(x), output.contents)))
         return signature
 
